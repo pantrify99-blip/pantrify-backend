@@ -46,4 +46,25 @@ router.post('/api/waitlist', async (req, res) => {
   }
 })
 
+router.get('/api/count', async (req, res) => {
+  const { MAILCHIMP_API_KEY, MAILCHIMP_AUDIENCE_ID, MAILCHIMP_DC } = process.env
+  const authHeader = 'Basic ' + Buffer.from('anystring:' + MAILCHIMP_API_KEY).toString('base64')
+
+  try {
+    const response = await fetch(
+      `https://${MAILCHIMP_DC}.api.mailchimp.com/3.0/lists/${MAILCHIMP_AUDIENCE_ID}`,
+      {
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    const data = await response.json()
+    return res.status(200).json({ count: data.stats.member_count })
+  } catch (err) {
+    return res.status(500).json({ count: 0 })
+  }
+})
+
 module.exports = router
