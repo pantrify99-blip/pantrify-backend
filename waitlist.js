@@ -41,7 +41,7 @@ router.get('/api/count', async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://${MAILCHIMP_DC}.api.mailchimp.com/3.0/lists/${MAILCHIMP_AUDIENCE_ID}`,
+      `https://us6.api.mailchimp.com/3.0/lists/1eb8e75c11`,
       {
         headers: {
           'Authorization': authHeader,
