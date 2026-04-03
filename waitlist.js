@@ -3,16 +3,13 @@ const fetch = require('node-fetch')
 const router = express.Router()
 
 router.post('/api/waitlist', async (req, res) => {
-  console.log('Hit the waitlist route', req.body)
   const { email } = req.body
+  if (!email) return res.status(400).json({ error: 'Email is required' })
 
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' })
-  }
-
-  const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY  // hardcode temporarily
+  const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY
   const MAILCHIMP_AUDIENCE_ID = '1eb8e75c11'
   const MAILCHIMP_DC = 'us6'
+  const authHeader = 'Basic ' + Buffer.from('anystring:' + MAILCHIMP_API_KEY).toString('base64')
 
   try {
     const response = await fetch(
@@ -20,34 +17,26 @@ router.post('/api/waitlist', async (req, res) => {
       {
         method: 'POST',
         headers: {
-            Authorization: `Basic ${Buffer.from(`anystring:${MAILCHIMP_API_KEY}`).toString('base64')}`, 'Content-Type': 'application/json'
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          email_address: email,
-          status: 'subscribed',
-          tags: ['waitlist']
-        })
+        body: JSON.stringify({ email_address: email, status: 'subscribed', tags: ['waitlist'] })
       }
     )
-
     const data = await response.json()
-
-    if (response.ok) {
+    if (response.ok || data.title === 'Member Exists') {
       return res.status(200).json({ success: true })
-    } else if (data.title === 'Member Exists') {
-      return res.status(200).json({ success: true })
-    } else {
-      return res.status(500).json({ error: data.detail || 'Mailchimp error' })
     }
-
+    return res.status(500).json({ error: data.detail || 'Mailchimp error' })
   } catch (err) {
-    console.error('Waitlist error:', err)
-    return res.status(500).json({ error: 'Server error, please try again' })
+    return res.status(500).json({ error: 'Server error' })
   }
 })
 
 router.get('/api/count', async (req, res) => {
-  const { MAILCHIMP_API_KEY, MAILCHIMP_AUDIENCE_ID, MAILCHIMP_DC } = process.env
+  const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY
+  const MAILCHIMP_AUDIENCE_ID = '1eb8e75c11'
+  const MAILCHIMP_DC = 'us6'
   const authHeader = 'Basic ' + Buffer.from('anystring:' + MAILCHIMP_API_KEY).toString('base64')
 
   try {
